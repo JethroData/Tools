@@ -8,12 +8,12 @@ Python 2.6 or higher installed.
 
 Run:
 From the command line, run the command:
-Linux: python JethroQueryStats.py <parameters>
-Windows: JethroQueryStats.py <parameters>
+Linux: python JethroQueryStats.py parameters
+Windows: JethroQueryStats.py parameters
 
 It accepts the following command line parameters:
 
--r -j -p <file pattern> <list of files|directories>
+-r -j -p file pattern list of files|directories
 
 Where:
 list of files|directories - The list of log files or directories to parse.
@@ -90,8 +90,8 @@ Python 2.6 or higher installed.
 
 Run:
 From the command line, run the command:
-Linux: python ExtractQueries.py <log file>
-Windows: ExtractQueries.py <log file>
+Linux: python ExtractQueries.py log file
+Windows: ExtractQueries.py log file
 
 ExtractQueries reads the input file, searches for executed queries and generates a report file named queries.csv. Each row in the file contains the follwoing information about an executed query:
 
@@ -110,15 +110,15 @@ TableToDesc should run on a linux server where jethro is installed.
 
 Run:
 From the command line, run the command:
-python TableToDesc.py -i <instance name> -u <Connection URL> [-d <delimiter>] [-n <null string>] [-r <reject limit>] [-f <timstamp format>] [Table name]
+python TableToDesc.py -i instance name -u Connection URL [-d delimiter] [-n null string] [-r reject limit] [-f timstamp format] [Table name]
 
 where:
-<instance name> is the name of the jethro instance.
-<Connection URL> is the Jethro host and port in the form <host>:<port>. For example localhost:9111
-<delimiter> is the delimiter of the raw data. Default=','.
-<null string> is the null string of the input data. Default is empty string.
-<reject limit> is the number of rejects to allow before aborting the load. Default=100.
-<timstamp format> is the format for timstamp columns. Default='yyyy-MM-dd'.
+instance name is the name of the jethro instance.
+Connection URL is the Jethro host and port in the form host:port. For example localhost:9111
+delimiter is the delimiter of the raw data. Default=','.
+null string is the null string of the input data. Default is empty string.
+reject limit is the number of rejects to allow before aborting the load. Default=100.
+timstamp format is the format for timstamp columns. Default='yyyy-MM-dd'.
 Table name is an optional table name to create the description file for. If no table name is specified, then a description file will be created to every table in the instance.
 
 
