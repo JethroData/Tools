@@ -122,6 +122,86 @@ timstamp format is the format for timstamp columns. Default='yyyy-MM-dd'.
 Table name is an optional table name to create the description file for. If no table name is specified, then a description file will be created to every table in the instance.
 
 
+#AnalyzeData
+
+AnalyzeData reads a sample of the input data that is going to be loaded into Jethro
+
+Prerequisites:
+Python 2.6 or higher installed.
+Python tabulate package.
+To install tabulate:
+Linux: 
+	TABULATE_INSTALL=lib-only pip install tabulate
+Windows:
+	set TABULATE_INSTALL=lib-only
+	pip install tabulate
+
+	
+Run:
+
+AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-n] [-c] [-g <table name>] [<input file>]
+    -i: The number of rows to read from the input.
+    -d: The input data delimiter.
+    -n: Indicates whether the first row contains the column names.
+    -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table.
+    -g: Generate a create table script and a description file using the given table name.
+    <input file>: The input file to read. If not specified, read from standard input.
+	
+The input data is expected to be delimited rows of data. 
+Thw data is read and analyzed and then a reprot such as the following is generated:
+
++----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------+
+|   Number | Name       |   Rows | Type      |   Percent | Exceptions         |   Distinct | Samples                                                       |
+|----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------|
+|        1 | name       |      6 | STRING    |       100 |                    |          6 | "aaa" "bbb" "ccc" "ddd" "eee"                                 |
+|        2 | age        |      6 | BIGINT    |        66 | "NULL"             |          4 | "1234568674737747372" "-12" "341"                             |
+|        3 | birth date |      6 | TIMESTAMP |       100 |                    |          5 | "2016-01-07" "2016-12-23" "2016-07-1" "20160714" "2016-07-14" |
+|        4 | balance    |      6 | DOUBLE    |        83 | "-"                |          6 | "1.23" "0.34" "12.0" "11" "0.00000537774"                     |
+|        5 | extra      |      6 | TIMESTAMP |        50 | "1.23" "24" "NULL" |          5 | "2016-07-14" "2016-06-12"                                     |
++----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------+
+
+
+Number: The column serial number.
+Name: The column name if the data contains headers. Otherwise is is c1..cN.
+Rows: The number of rows for the column.
+Type: The suggested type to use based on the data. A non string type is suggested in case more than 50% of the values are of that type and there are 5 or less distinct exception values.
+Percent: The percentage of the values of the suggested type out of all values.
+Exceptions: A list of up to 5 exception values. Exception values are values that do not match the suggested type.
+Distinct: The number of distincet values.
+Samples: Aample values of the suggested type.
+
+In addition, if the -g parameter is specified with a table name, then a create table script and a description file is generated based on the data.
+For the above data, the follwoing scripts are generated when given the table name "test":
+
+create table test
+(
+name STRING,
+age BIGINT,
+birth date TIMESTAMP,
+balance DOUBLE,
+extra STRING
+);
+
+table test
+row format delimited
+	fields terminated by '|'
+	null defined as 'NULL'
+OPTIONS
+	SKIP 1
+(
+name,
+age,
+birth date format='yyyy-MM-dd',
+balance null defined as '-',
+extra format='yyyy-MM-dd'
+)
+
+***
+If the suggested type is not STRING, but the exception list has more than one value, then the generated type will become STRING.
+The null definition is based on the most common exception value.
+If a column has a single exception value that is different that the most common null value, then a column specific null definition is generated for that column.
+If the input contains a header row, then a SKIP 1 option is added.
+The timestamp format is generated based on the first timestamp value in the column.
 
 
 
