@@ -11,7 +11,7 @@ class Column:
     separator_idx = 16
     date_sparators = [2, 6]
     milli_idx = 23
-    string_list_max_size = 1000
+    string_list_max_size = 1001
     
     def __init__(self, name):
         self.name = name
@@ -174,7 +174,7 @@ def columnsToTable(columns):
             row = [i, column.name, column.rowcount, column.type, perc, '']
         else:
             row = [i, column.name, column.rowcount, column.type, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
-        if  column.total_list_size > Column.string_list_max_size:
+        if  column.total_list_size >= Column.string_list_max_size:
             row.append('> 1000')
         else:
             row.append(str(column.total_list_size))
