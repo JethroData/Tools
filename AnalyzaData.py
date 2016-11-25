@@ -11,7 +11,7 @@ class Column:
     separator_idx = 16
     date_sparators = [2, 6]
     milli_idx = 23
-    string_list_max_size = 1001
+    string_list_max_size = 1000
     
     def __init__(self, name):
         self.name = name
@@ -92,9 +92,8 @@ class Column:
             return False
     
     def addDistinct(self, value_list, value):
-        if  self.total_list_size < Column.string_list_max_size and value not in value_list:
+        if  len(value_list) < Column.string_list_max_size and value not in value_list:
             value_list.append(value)
-            self.total_list_size += 1
                 
     def addValue(self, value):
         self.rowcount += 1
@@ -137,9 +136,11 @@ class Column:
                 self.perc = perc
                 self.type = 'TIMESTAMP'
                 
-        if self.perc < 0.5 or len(self.string_list) > 5:
+        if self.perc == 0.0 or len(self.string_list) > 5:
             self.type = 'STRING'
             self.perc = 1.0
+        
+        self.total_list_size = len(self.int_list) + len(self.timestamp_list) + len(self.string_list)
             
     def getExceptionList(self):
         if self.type == 'STRING':
@@ -151,7 +152,7 @@ class Column:
     
     def getValueList(self):
         if self.type == 'STRING':
-            return self.string_list
+            return self.string_list + self.int_list + self.timestamp_list
         elif self.type == 'TIMESTAMP':
             return self.timestamp_list
         else:
@@ -173,7 +174,7 @@ def columnsToTable(columns):
             row = [i, column.name, column.rowcount, column.type, perc, '']
         else:
             row = [i, column.name, column.rowcount, column.type, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
-        if  column.total_list_size == Column.string_list_max_size:
+        if  column.total_list_size > Column.string_list_max_size:
             row.append('> 1000')
         else:
             row.append(str(column.total_list_size))
@@ -343,6 +344,7 @@ def main(argv):
     printReport(table, csvmode)
     if table_name != '':
         generateSchema(table_name, delimiter, with_header)
+   
         
 if __name__ == '__main__':
     main(sys.argv[1:])
