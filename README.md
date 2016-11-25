@@ -148,7 +148,7 @@ AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-n] [-c] [-g <table name>] 
     <input file>: The input file to read. If not specified, read from standard input.
 	
 The input data is expected to be delimited rows of data. 
-Thw data is read and analyzed and then a reprot such as the following is generated:
+The data is read and analyzed and then a report such as the following is generated:
 
 +----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------+
 |   Number | Name       |   Rows | Type      |   Percent | Exceptions         |   Distinct | Samples                                                       |
@@ -167,11 +167,11 @@ Rows: The number of rows for the column.
 Type: The suggested type to use based on the data. A non string type is suggested in case more than 50% of the values are of that type and there are 5 or less distinct exception values.
 Percent: The percentage of the values of the suggested type out of all values.
 Exceptions: A list of up to 5 exception values. Exception values are values that do not match the suggested type.
-Distinct: The number of distincet values.
-Samples: Aample values of the suggested type.
+Distinct: The number of distinct values.
+Samples: Sample values of the suggested type.
 
 In addition, if the -g parameter is specified with a table name, then a create table script and a description file is generated based on the data.
-For the above data, the follwoing scripts are generated when given the table name "test":
+For the above data, the following scripts are generated when given the table name "test":
 
 create table test
 (
