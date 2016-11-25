@@ -5,7 +5,7 @@ class Column:
     
     max_int = int('0x7FFFFFFF' , 16)
     min_int = -max_int-1
-    datetime_regex = re.compile('^((\d{4}([-/.])(0?[1-9]|1[0-2])[-/\.](0?[1-9]|[12][0-9]|3[01]))|((0?[1-9]|1[0-2])([-/\.])(0?[1-9]|[12][0-9]|3[01])[-/\.]\d{4})|(\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01]))|((0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\d{4}))(([\sT])(((0?[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]))(:([0-9]|[0-5][0-9]))?)\.([0-9]{1,6}Z?)?)?$')
+    datetime_regex = re.compile('^((\d{4}([-/.])(0?[1-9]|1[0-2])[-/\.](0?[1-9]|[12][0-9]|3[01]))|((0?[1-9]|1[0-2])([-/\.])(0?[1-9]|[12][0-9]|3[01])[-/\.]\d{4})|(\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01]))|((0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\d{4}))(([\sT])(((0?[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]))(:([0-9]|[0-5][0-9]))?)([:\.][0-9]{1,9}Z?)?)?$')
     date_formats = [['yyyy-MM-dd', 1], ['MM-dd-yyyy', 5], ['yyyyMMdd', 9], ['MMddyyyy', 12]] 
     time_formats = [['HH:mm:ss', 17], ['HH:mm', 18]]
     separator_idx = 16
@@ -20,10 +20,11 @@ class Column:
         self.intcount = 0
         self.floatcount = 0
         self.timestampcount = 0
-        self.timestampFormat = ''
-        self.perc = float('1.0')
+        self.perc = float('0.0')
         self.string_list = []
-        self.values = []
+        self.int_list = []
+        self.timestamp_list = []
+        self.total_list_size = 0
         self.min_int_value = sys.maxint
         self.max_int_value = -sys.maxint-1
         self.max_float_size = 0
@@ -50,7 +51,7 @@ class Column:
             return False
     
     def getTimstampFormat(self):
-        for v in self.values:
+        for v in self.timestamp_list:
             match = self.datetime_regex.match(v)
             if match != None:
                 break
@@ -71,7 +72,7 @@ class Column:
         
         milli = match.groups()[self.milli_idx]
         if milli != None:
-            timeFormat += '.' + 'S'*len(milli)
+            timeFormat += milli[0] + 'S'*(len(milli)-1)
              
         if match.groups()[self.separator_idx] != None:
             separator = match.groups()[self.separator_idx]
@@ -90,29 +91,31 @@ class Column:
         else:
             return False
     
-    def addDistinct(self, value):
-        if  len(self.values) < Column.string_list_max_size and value not in self.values:
-            self.values.append(value)
+    def addDistinct(self, value_list, value):
+        if  self.total_list_size < Column.string_list_max_size and value not in value_list:
+            value_list.append(value)
+            self.total_list_size += 1
                 
     def addValue(self, value):
-        self.addDistinct(value)
         self.rowcount += 1
-        if self.isInt(value):
+        if self.isTimestamp(value):
+            self.timestampcount += 1
+            self.addDistinct(self.timestamp_list, value)
+        elif self.isInt(value):
             self.intcount += 1
             i = int(float(value))
             if i < self.min_int_value:
                 self.min_int_value = i
             if i > self.max_int_value:
                 self.max_int_value = i
+            self.addDistinct(self.int_list, value)
         elif self.isFloat(value):
             self.floatcount += 1
             if len(value) > self.max_float_size:
                 self.max_float_size = len(value)
-        elif self.isTimestamp(value):
-            self.timestampcount += 1
+            self.addDistinct(self.int_list, value)
         else:
-            if len(self.string_list) < Column.string_list_max_size and value not in self.string_list:
-                self.string_list.append(value)
+            self.addDistinct(self.string_list, value)
             
     def computeType(self):
         if self.floatcount > 0 or self.intcount > 0:
@@ -128,16 +131,35 @@ class Column:
             
             self.perc = (self.intcount + self.floatcount) * 1.0 / self.rowcount
         
-        elif self.timestampcount > 0:
-            self.type = 'TIMESTAMP'
-            self.perc = self.timestampcount * 1.0 / self.rowcount
-            self.timestampFormat = self.getTimstampFormat()
+        if self.timestampcount > 0:
+            perc = self.timestampcount * 1.0 / self.rowcount
+            if perc > self.perc:
+                self.perc = perc
+                self.type = 'TIMESTAMP'
                 
-        if self.perc < 0.5 and len(self.string_list) > 5:
+        if self.perc < 0.5 or len(self.string_list) > 5:
             self.type = 'STRING'
+            self.perc = 1.0
+            
+    def getExceptionList(self):
+        if self.type == 'STRING':
+            return []
+        elif self.type == 'TIMESTAMP':
+            return self.int_list + self.string_list
+        else:
+            return self.timestamp_list + self.string_list
+    
+    def getValueList(self):
+        if self.type == 'STRING':
+            return self.string_list
+        elif self.type == 'TIMESTAMP':
+            return self.timestamp_list
+        else:
+            return self.int_list
+
         
 columns = []
-
+    
 def columnsToTable(columns):
     table = []
     i = 1;
@@ -150,12 +172,12 @@ def columnsToTable(columns):
         if column.type == 'STRING':
             row = [i, column.name, column.rowcount, column.type, perc, '']
         else:
-            row = [i, column.name, column.rowcount, column.type, perc, ' '.join('"' + e + '"' for e in column.string_list[:5])] 
-        if  len(column.values) == Column.string_list_max_size:
+            row = [i, column.name, column.rowcount, column.type, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
+        if  column.total_list_size == Column.string_list_max_size:
             row.append('> 1000')
         else:
-            row.append(str(len(column.values)))
-        row.append(' '.join('"' + e + '"' for e in column.values[:5]))
+            row.append(str(column.total_list_size))
+        row.append(' '.join('"' + e + '"' for e in column.getValueList()[:5]))
         table.append(row)  
         i += 1
     return table
@@ -202,7 +224,7 @@ def writeHeaders(ddlfile, descfile, table_name, delimiter, nullStr, with_header)
     descfile.write("\tfields terminated by '" + delimiter + "'\n")
     descfile.write("\tnull defined as '" + nullStr + "'\n")
     if with_header == True:
-        descfile.write("OPTIONS\n\tSKIP(1)\n")
+        descfile.write("OPTIONS\n\tSKIP 1\n")
     descfile.write('(\n')
 
 def writeFooters(ddlfile, descfile):
@@ -240,16 +262,17 @@ def generateSchema(table_name, delimiter, with_header):
     i = 0
     for c in columns:
         ctype = c.type
-        if len(c.string_list) > 1:
+        exceptionList = c.getExceptionList()
+        if len(exceptionList) > 1:
             ctype = 'STRING'
             
         ddlfile.write(c.name + ' ' + ctype)
         descfile.write(c.name)
         if c.type == 'TIMESTAMP':
-            descfile.write(" format='" + c.timestampFormat + "'")
+            descfile.write(" format='" + c.getTimstampFormat() + "'")
         
-        if ctype != 'STRING' and len(c.string_list) == 1 and c.string_list[0] != nullStr:
-            descfile.write(" null defined as '" + c.string_list[0] + "'")
+        if ctype != 'STRING' and len(exceptionList) == 1 and exceptionList[0] != nullStr:
+            descfile.write(" null defined as '" + exceptionList[0] + "'")
             
         i += 1
         if i < len(columns):
@@ -268,10 +291,10 @@ def printUsage():
     sys.stderr.write('AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-n] [-c] [-g <table name>] [<input file>]\n')
     sys.stderr.write('    -i: Number of rows to read from the input.\n')
     sys.stderr.write('    -d: The input data delimiter.\n')
-    sys.stderr.write('    -n: The first row contains the column names.\n')
-    sys.stderr.write('    -c: Write the output report as a tab delimited file.\n')
+    sys.stderr.write('    -n: Indicates whether the first row contains the column names.\n')
+    sys.stderr.write('    -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table.\n')
     sys.stderr.write('    -g: Generate a create table script and a description file using the given table name.\n')
-    sys.stderr.write('    <input file>: The input file to read. If not specified, use standard input.\n')
+    sys.stderr.write('    <input file>: The input file to read. If not specified, read from standard input.\n')
     
     
     
@@ -316,7 +339,7 @@ def main(argv):
     else:
         csvfile = open(args[0], 'rb')
     
-    table = analyzeData(csvfile, delimiter, with_header, number_of_rows)
+    table = analyzeData(csvfile, delimiter.decode('string_escape'), with_header, number_of_rows)
     printReport(table, csvmode)
     if table_name != '':
         generateSchema(table_name, delimiter, with_header)

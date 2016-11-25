@@ -136,7 +136,10 @@ Windows:
 	set TABULATE_INSTALL=lib-only
 	pip install tabulate
 
-	
+If pip is not installed:
+	wget https://bootstrap.pypa.io/get-pip.py
+	python get-pip.py
+
 Run:
 
 AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-n] [-c] [-g <table name>] [<input file>]
