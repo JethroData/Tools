@@ -13,6 +13,11 @@ class Column:
     milli_idx = 23
     string_list_max_size = 1001
     
+    category_regex = [['Url', '(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))'],
+                      ['Uuid', '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'],
+                      ['Phone Number', '(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})']
+                    ]
+    
     def __init__(self, name):
         self.name = name
         self.type = 'STRING'
@@ -197,13 +202,21 @@ def analyzeData(inputcsv, delimiter, with_header=False, number_of_rows=0):
         columns.append(column)
     
     n = 1
+    rot = ['|', '/', '-', '\\']
     for row in reader:
         if n == number_of_rows:
             break
         for  i in range(len(row)):
             columns[i].addValue(row[i])
-        n += 1
+        
+        if number_of_rows > 0:
+            sys.stdout.write('\r')
+            sys.stdout.write("\r" + rot[n % 4])
+            sys.stdout.write(" Processing " + str(int((n * 1.0 / number_of_rows) * 100)) + "%..." )
+            sys.stdout.flush()
+        n += 1   
     
+    sys.stdout.write('\r')
     return columnsToTable(columns)
 
 
