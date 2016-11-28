@@ -1,3 +1,6 @@
+#!/usr/bin/python
+
+
 import sys, csv, re, getopt, collections
 from tabulate import tabulate
 
@@ -15,7 +18,8 @@ class Column:
     
     category_regex = [['Url', '(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))'],
                       ['Uuid', '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'],
-                      ['Phone Number', '(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})']
+                      ['Phone Number', '(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'],
+                      ['Email', '^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$']
                     ]
     
     def __init__(self, name):
