@@ -130,7 +130,17 @@ class Column:
             self.addDistinct(self.string_list, value)
     
     def getCategory(self):
-        if self.type == 'STRING':
+        if self.type == 'TIMESTAMP':
+            for v in self.timestamp_list:
+                match = self.datetime_regex.match(v)
+                if match != None:
+                    break
+            
+            for tf in self.time_formats:
+                if match.groups()[tf[1]] != None:
+                    return 'Datetime'
+            return 'Date'
+        elif self.type == 'STRING':
             i = 0
             for v in self.string_list:
                 if v.upper() not in Column.null_strings:
@@ -172,6 +182,7 @@ class Column:
             if perc > self.perc:
                 self.perc = perc
                 self.type = 'TIMESTAMP'
+                self.category = self.getCategory()
                 
         if self.perc == 0.0 or len(self.string_list) > 5:
             self.type = 'STRING'
