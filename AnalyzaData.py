@@ -3,6 +3,7 @@
 
 import sys, csv, re, getopt, collections
 from tabulate import tabulate
+from inspect import getcallargs
 
 class Column:
     
@@ -16,15 +17,18 @@ class Column:
     milli_idx = 23
     string_list_max_size = 1001
     
-    category_regex = [['Url', '(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))'],
+    category_regex = [['Url', 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'],
                       ['Uuid', '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'],
                       ['Phone Number', '(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'],
-                      ['Email', '^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$']
+                      ['Email', '^[\w\.\+\-]+\@([\w]+\.)+[a-z]{2,3}$']
                     ]
+    
+    null_strings = ['', 'NULL', '\N']
     
     def __init__(self, name):
         self.name = name
         self.type = 'STRING'
+        self.category = ''
         self.rowcount = 0
         self.intcount = 0
         self.floatcount = 0
@@ -124,6 +128,30 @@ class Column:
             self.addDistinct(self.int_list, value)
         else:
             self.addDistinct(self.string_list, value)
+    
+    def getCategory(self):
+        if self.type == 'STRING':
+            i = 0
+            for v in self.string_list:
+                if v.upper() not in Column.null_strings:
+                    break
+                i += 1
+            if i == len(self.string_list):
+                return ''
+               
+            regx = []
+            for r in Column.category_regex:
+                if  re.match(r[1], v) != None:
+                    regx = r
+                    break
+            if regx != []: 
+                for v in self.string_list[i + 1:]:
+                    if v.upper() not in Column.null_strings and re.match(regx[1], v) == None:
+                        return ''
+                return regx[0]
+        return ''
+                
+            
             
     def computeType(self):
         if self.floatcount > 0 or self.intcount > 0:
@@ -148,6 +176,7 @@ class Column:
         if self.perc == 0.0 or len(self.string_list) > 5:
             self.type = 'STRING'
             self.perc = 1.0
+            self.category = self.getCategory()
         
         self.total_list_size = len(self.int_list) + len(self.timestamp_list) + len(self.string_list)
             
@@ -180,9 +209,9 @@ def columnsToTable(columns):
             perc = '< 1'
         
         if column.type == 'STRING':
-            row = [i, column.name, column.rowcount, column.type, perc, '']
+            row = [i, column.name, column.rowcount, column.type, column.category, perc, '']
         else:
-            row = [i, column.name, column.rowcount, column.type, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
+            row = [i, column.name, column.rowcount, column.type, column.category, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
         if  column.total_list_size >= Column.string_list_max_size:
             row.append('> 1000')
         else:
@@ -225,7 +254,7 @@ def analyzeData(inputcsv, delimiter, with_header=False, number_of_rows=0):
 
 
 def printReport(table, csvmode=False):
-    headers=['Number', 'Name', 'Rows', 'Type', 'Percent', 'Exceptions', 'Distinct', 'Samples']
+    headers=['Number', 'Name', 'Rows', 'Type', 'Category', 'Percent', 'Exceptions', 'Distinct', 'Samples']
     if csvmode == True:
         print('\t'.join(headers))
         for row in table:
