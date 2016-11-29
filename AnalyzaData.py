@@ -1,17 +1,16 @@
 #!/usr/bin/python
 
 
-import sys, csv, re, getopt, collections
+import sys, csv, re, getopt, collections, calendar, time
 from tabulate import tabulate
-from inspect import getcallargs
 
 class Column:
     
     max_int = int('0x7FFFFFFF' , 16)
     min_int = -max_int-1
     datetime_regex = re.compile('^((\d{4}([-/.])(0?[1-9]|1[0-2])[-/\.](0?[1-9]|[12][0-9]|3[01]))|((0?[1-9]|1[0-2])([-/\.])(0?[1-9]|[12][0-9]|3[01])[-/\.]\d{4})|(\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01]))|((0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\d{4}))(([\sT])(((0?[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]))(:([0-9]|[0-5][0-9]))?)([:\.][0-9]{1,9}Z?)?)?$')
-    date_formats = [['yyyy-MM-dd', 1], ['MM-dd-yyyy', 5], ['yyyyMMdd', 9], ['MMddyyyy', 12]] 
-    time_formats = [['HH:mm:ss', 17], ['HH:mm', 18]]
+    date_formats = [['yyyy-M-d', '%Y-%m-%d', 1], ['M-d-yyyy', '%m-%d-%Y', 5], ['yyyyMMdd', '%Y%m%d', 9], ['MMddyyyy', '%m%d%Y', 12]] 
+    time_formats = [['H:m:s', '%H:%M:%S', 17], ['H:m', '%H:%M', 18]]
     separator_idx = 16
     date_sparators = [2, 6]
     milli_idx = 23
@@ -63,29 +62,30 @@ class Column:
         except ValueError:
             return False
     
-    def getTimstampFormat(self):
-        for v in self.timestamp_list:
-            match = self.datetime_regex.match(v)
-            if match != None:
-                break
-            
+    def getTimestampFormat(self, match, jethroFormat):
         dateFormat = ''
         dateSeparator = ''
         separator = ''
         timeFormat = ''
+        formatPos = 0
+        if jethroFormat == False:
+            formatPos = 1
         for df in self.date_formats:
-            if match.groups()[df[1]] != None:
-                dateFormat = df[0]
+            if match.groups()[df[2]] != None:
+                dateFormat = df[formatPos]
                 break
         
         for tf in self.time_formats:
-            if match.groups()[tf[1]] != None:
-                timeFormat = tf[0]
+            if match.groups()[tf[2]] != None:
+                timeFormat = tf[formatPos]
                 break
         
         milli = match.groups()[self.milli_idx]
         if milli != None:
-            timeFormat += milli[0] + 'S'*(len(milli)-1)
+            if jethroFormat == True:
+                timeFormat += milli[0] + 'S'*(len(milli)-1)
+            else:
+                timeFormat += milli[0] + '%f'
              
         if match.groups()[self.separator_idx] != None:
             separator = match.groups()[self.separator_idx]
@@ -98,8 +98,25 @@ class Column:
         
         return dateFormat.replace('-', dateSeparator) + separator + timeFormat
         
+    def getColumnTimstampFormat(self):
+        for v in self.timestamp_list:
+            match = self.datetime_regex.match(v)
+            if match != None:
+                break
+            
+        return self.getTimestampFormat(match, True)
+    
+    def isValidTimestamp(self, value, match):
+        tsFormat = self.getTimestampFormat(match, False)
+        if tsFormat != '':
+            ts = calendar.timegm(time.strptime(value, tsFormat))
+            if ts > 0 and ts < sys.maxint:
+                return True
+        return False
+
     def isTimestamp(self, value):
-        if self.datetime_regex.match(value):
+        m = self.datetime_regex.match(value)
+        if m != None and self.isValidTimestamp(value, m):
             return True
         else:
             return False
@@ -137,7 +154,7 @@ class Column:
                     break
             
             for tf in self.time_formats:
-                if match.groups()[tf[1]] != None:
+                if match.groups()[tf[2]] != None:
                     return 'Datetime'
             return 'Date'
         elif self.type == 'STRING':
@@ -227,13 +244,13 @@ def columnsToTable(columns):
             row.append('> 1000')
         else:
             row.append(str(column.total_list_size))
-        row.append(' '.join('"' + e + '"' for e in column.getValueList()[:5]))
+        row.append(' '.join('"' + e + '"' for e in column.getValueList()[:10]))
         table.append(row)  
         i += 1
     return table
     
-def analyzeData(inputcsv, delimiter, with_header=False, number_of_rows=0):
-    reader = csv.reader(inputcsv, delimiter=delimiter)
+def analyzeData(inputcsv, delimiter, quotechar='"', with_header=False, number_of_rows=0):
+    reader = csv.reader(inputcsv, delimiter=delimiter, quotechar=quotechar)
     header = next(reader)
     ncolumns = len(header)
     global columns
@@ -327,7 +344,7 @@ def generateSchema(table_name, delimiter, with_header):
         ddlfile.write(c.name + ' ' + ctype)
         descfile.write(c.name)
         if c.type == 'TIMESTAMP':
-            descfile.write(" format='" + c.getTimstampFormat() + "'")
+            descfile.write(" format='" + c.getColumnTimstampFormat() + "'")
         
         if ctype != 'STRING' and len(exceptionList) == 1 and exceptionList[0] != nullStr:
             descfile.write(" null defined as '" + exceptionList[0] + "'")
@@ -346,9 +363,10 @@ def generateSchema(table_name, delimiter, with_header):
     descfile.close()
     
 def printUsage():
-    sys.stderr.write('AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-n] [-c] [-g <table name>] [<input file>]\n')
+    sys.stderr.write('AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-q <quote char>] [-n] [-c] [-g <table name>] [<input file>]\n')
     sys.stderr.write('    -i: Number of rows to read from the input.\n')
     sys.stderr.write('    -d: The input data delimiter.\n')
+    sys.stderr.write('    -q: The input data quote character.\n')
     sys.stderr.write('    -n: Indicates whether the first row contains the column names.\n')
     sys.stderr.write('    -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table.\n')
     sys.stderr.write('    -g: Generate a create table script and a description file using the given table name.\n')
@@ -358,7 +376,7 @@ def printUsage():
     
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv,"i:d:ncg:")
+        opts, args = getopt.getopt(argv,"i:d:q:ncg:")
     except getopt.GetoptError:
         printUsage()
         sys.exit(2)
@@ -369,6 +387,7 @@ def main(argv):
         
     number_of_rows = 0
     delimiter = ','
+    quotechar = '"'
     with_header = False
     csvmode = False
     table_name = ''
@@ -378,12 +397,19 @@ def main(argv):
                 number_of_rows = int(arg)
             except ValueError:
                 sys.stderr.write("Invalid number of rows. Must be a number.\n")
-        if opt == '-d':
+        elif opt == '-d':
             delimiter = arg
             if delimiter.startswith('"') or delimiter.startswith("'"):
                 delimiter = delimiter[1:-1]
             if len(delimiter) > 1 and not delimiter.startswith('\\'):
                 sys.stderr.write("Invalid delimiter. Must be one character.\n")
+                sys.exit(2)
+        elif opt == '-q':
+            quotechar = arg
+            if len(quotechar) > 1 and (quotechar.startswith('"') or quotechar.startswith("'")):
+                quotechar = quotechar[1:-1]
+            if len(quotechar) > 1 and not quotechar.startswith('\\'):
+                sys.stderr.write("Invalid quote char. Must be one character.\n")
                 sys.exit(2)
         elif opt == '-n':
             with_header = True
@@ -397,7 +423,7 @@ def main(argv):
     else:
         csvfile = open(args[0], 'rb')
     
-    table = analyzeData(csvfile, delimiter.decode('string_escape'), with_header, number_of_rows)
+    table = analyzeData(csvfile, delimiter.decode('string_escape'), quotechar, with_header, number_of_rows)
     printReport(table, csvmode)
     if table_name != '':
         generateSchema(table_name, delimiter, with_header)
