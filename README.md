@@ -142,9 +142,10 @@ If pip is not installed:
 
 Run:
 
-AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-n] [-c] [-g <table name>] [<input file>]
-    -i: The number of rows to read from the input.
+AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-q <quote char>] [-n] [-c] [-g <table name>] [<input file>]
+    -i: Number of rows to read from the input.
     -d: The input data delimiter.
+    -q: The input data quote character.
     -n: Indicates whether the first row contains the column names.
     -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table.
     -g: Generate a create table script and a description file using the given table name.
