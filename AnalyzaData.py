@@ -2,7 +2,6 @@
 
 
 import sys, csv, re, getopt, collections, calendar, time
-from tabulate import tabulate
 
 class Column:
     
@@ -300,6 +299,7 @@ def printReport(table, csvmode=False):
         for row in table:
             print('\t'.join(str(e) for e in row))
     else:
+        from tabulate import tabulate
         print tabulate(table, headers, tablefmt="psql")
 
 def writeHeaders(ddlfile, descfile, table_name, delimiter, nullStr, with_header):
