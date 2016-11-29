@@ -12,14 +12,15 @@ class Column:
     date_formats = [['yyyy-M-d', '%Y-%m-%d', 1], ['M-d-yyyy', '%m-%d-%Y', 5], ['yyyyMMdd', '%Y%m%d', 9], ['MMddyyyy', '%m%d%Y', 12]] 
     time_formats = [['H:m:s', '%H:%M:%S', 17], ['H:m', '%H:%M', 18]]
     separator_idx = 16
-    date_sparators = [2, 6]
+    date_sparators = [2, 7]
     milli_idx = 23
     string_list_max_size = 1001
     
     category_regex = [['Url', 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'],
                       ['Uuid', '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'],
                       ['Phone Number', '(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'],
-                      ['Email', '^[\w\.\+\-]+\@([\w]+\.)+[a-z]{2,3}$']
+                      ['Email', '^[\w\.\+\-]+\@([\w]+\.)+[a-z]{2,3}$'],
+                      ['IP Address' , '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$']
                     ]
     
     null_strings = ['', 'NULL', '\N']
@@ -121,6 +122,12 @@ class Column:
         else:
             return False
     
+    def isPrimaryKey(self):
+        if (len(self.getValueList()) == self.rowcount or  len(self.getValueList()) >= Column.string_list_max_size) and len(self.getExceptionList()) == 0:
+            return True
+        else:
+            return False
+                                                                                                             
     def addDistinct(self, value_list, value):
         if  len(value_list) < Column.string_list_max_size and value not in value_list:
             value_list.append(value)
@@ -207,7 +214,12 @@ class Column:
             self.category = self.getCategory()
         
         self.total_list_size = len(self.int_list) + len(self.timestamp_list) + len(self.string_list)
-            
+        if self.isPrimaryKey() == True:
+            if self.category != '':
+                self.category += ' - Primary Key'
+            else:
+                self.category = 'Primary Key'
+                  
     def getExceptionList(self):
         if self.type == 'STRING':
             return []
