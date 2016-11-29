@@ -128,7 +128,7 @@ AnalyzeData reads a sample of the input data that is going to be loaded into Jet
 
 Prerequisites:
 Python 2.6 or higher installed.
-Python tabulate package.
+Python tabulate package (not required if report is issued in csv mode).
 To install tabulate:
 Linux: 
 	TABULATE_INSTALL=lib-only pip install tabulate
@@ -147,28 +147,28 @@ AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-q <quote char>] [-n] [-c] 
     -d: The input data delimiter.
     -q: The input data quote character.
     -n: Indicates whether the first row contains the column names.
-    -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table.
+    -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table. Installing tabulate is not required in this mode.
     -g: Generate a create table script and a description file using the given table name.
     <input file>: The input file to read. If not specified, read from standard input.
 	
 The input data is expected to be delimited rows of data. 
 The data is read and analyzed and then a report such as the following is generated:
-
-+----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------+
-|   Number | Name       |   Rows | Type      |   Percent | Exceptions         |   Distinct | Samples                                                       |
-|----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------|
-|        1 | name       |      6 | STRING    |       100 |                    |          6 | "aaa" "bbb" "ccc" "ddd" "eee"                                 |
-|        2 | age        |      6 | BIGINT    |        66 | "NULL"             |          4 | "1234568674737747372" "-12" "341"                             |
-|        3 | birth date |      6 | TIMESTAMP |       100 |                    |          5 | "2016-01-07" "2016-12-23" "2016-07-1" "20160714" "2016-07-14" |
-|        4 | balance    |      6 | DOUBLE    |        83 | "-"                |          6 | "1.23" "0.34" "12.0" "11" "0.00000537774"                     |
-|        5 | extra      |      6 | TIMESTAMP |        50 | "1.23" "24" "NULL" |          5 | "2016-07-14" "2016-06-12"                                     |
-+----------+------------+--------+-----------+-----------+--------------------+------------+---------------------------------------------------------------+
++----------+------------+--------+-----------+--------------+-----------+--------------+------------+------------------------------------------------------------------+
+|   Number | Name       |   Rows | Type      | Category     |   Percent | Exceptions   |   Distinct | Samples                                                          |
+|----------+------------+--------+-----------+--------------+-----------+--------------+------------+------------------------------------------------------------------|
+|        1 | name       |      6 | STRING    | Primary Key  |       100 |              |          6 | "aaa" "bbb" "ccc" "ddd" "eee" "fff"                              |
+|        2 | age        |      6 | BIGINT    |              |        66 | "NULL"       |          4 | "1234568674737747372" "-12" "341"                                |
+|        3 | birth date |      6 | TIMESTAMP | Date         |       100 |              |          5 | "2016-01-07" "2016-12-23" "2016-07-1" "20160714" "2016-07-14"    |
+|        4 | balance    |      6 | DOUBLE    |              |        83 | "-"          |          6 | "1.23" "0.34" "12.0" "11" "0.00000537774"                        |
+|        5 | phone      |      6 | STRING    | Phone Number |       100 |              |          5 | "201 239 3244" "201-345-2136" "" "(212) 435 9884" "917-234-0890" |
++----------+------------+--------+-----------+--------------+-----------+--------------+------------+------------------------------------------------------------------+
 
 
 Number: The column serial number.
 Name: The column name if the data contains headers. Otherwise is is c1..cN.
 Rows: The number of rows for the column.
 Type: The suggested type to use based on the data. A non string type is suggested in case more than 50% of the values are of that type and there are 5 or less distinct exception values.
+Category: For certain string values, a category can be detected based on regular expressions. It also specifies "Primary Key" in case the column has unique values.
 Percent: The percentage of the values of the suggested type out of all values.
 Exceptions: A list of up to 5 exception values. Exception values are values that do not match the suggested type.
 Distinct: The number of distinct values.
@@ -183,7 +183,7 @@ name STRING,
 age BIGINT,
 birth date TIMESTAMP,
 balance DOUBLE,
-extra STRING
+phone STRING
 );
 
 table test
@@ -195,9 +195,9 @@ OPTIONS
 (
 name,
 age,
-birth date format='yyyy-MM-dd',
+birth date format='yyyy-M-d',
 balance null defined as '-',
-extra format='yyyy-MM-dd'
+phone
 )
 
 ***
