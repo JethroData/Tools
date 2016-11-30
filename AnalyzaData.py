@@ -279,16 +279,19 @@ def analyzeData(inputcsv, delimiter, quotechar='"', with_header=False, number_of
         if n == number_of_rows:
             break
         for  i in range(len(row)):
+            if i == ncolumns:
+                ncolumns += 1;
+                columns.append(Column('c' + str(ncolumns)))
             columns[i].addValue(row[i])
         
         if number_of_rows > 0:
-            sys.stdout.write('\r')
-            sys.stdout.write("\r" + rot[n % 4])
-            sys.stdout.write(" Processing " + str(int((n * 1.0 / number_of_rows) * 100)) + "%..." )
-            sys.stdout.flush()
+            sys.stderr.write('\r')
+            sys.stderr.write("\r" + rot[n % 4])
+            sys.stderr.write(" Processing " + str(int((n * 1.0 / number_of_rows) * 100)) + "%..." )
+            sys.stderr.flush()
         n += 1   
     
-    sys.stdout.write('\r')
+    sys.stderr.write('\r')
     return columnsToTable(columns)
 
 
