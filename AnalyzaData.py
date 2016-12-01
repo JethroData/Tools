@@ -2,6 +2,12 @@
 
 import sys, csv, re, getopt, collections, calendar, time
 
+csv_mode = False
+try:
+    from tabulate import tabulate
+except ImportError:
+    csv_mode = True
+    
 class Column:
     
     max_int = int('0x7FFFFFFF' , 16)
@@ -320,7 +326,6 @@ def printReport(table, csvmode=False):
         for row in table:
             print('\t'.join(str(e) for e in row))
     else:
-        from tabulate import tabulate
         print tabulate(table, headers, tablefmt="psql")
 
 def writeHeaders(ddlfile, descfile, table_name, delimiter, nullStr, with_header):
@@ -408,6 +413,7 @@ def printUsage():
     
     
 def main(argv):
+    global csv_mode
     try:
         opts, args = getopt.getopt(argv,"i:d:q:ncg:")
     except getopt.GetoptError:
@@ -422,7 +428,7 @@ def main(argv):
     delimiter = ','
     quotechar = '"'
     with_header = False
-    csvmode = False
+    csvmode = csv_mode
     table_name = ''
     for opt, arg in opts:
         if opt == '-i':
