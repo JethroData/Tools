@@ -159,6 +159,7 @@ If pip is not installed:
 	
 The input data is expected to be delimited rows of data. 
 The data is read and analyzed and then a report such as the following is generated:
+
 Number | Name | Rows | Type | Category | Percent | Exceptions | Distinct | Samples
 ------ | ---- | ---- | ---- | -------- | ------- | ---------- | -------- | -------
 1 | name | 6 | STRING | Primary Key | 100 | | 6 | "aaa" "bbb" "ccc" "ddd" "eee" "fff"
