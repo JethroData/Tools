@@ -2,47 +2,48 @@
 
 JethroQueryStats parses the jethro server logs, extracts the executed queries and reports statistics about them
 
-Prerequisites:
+###Prerequisites
 Python 2.6 or higher installed.
 
 
-Run:
+###Run
 From the command line, run the command:
 Linux: python JethroQueryStats.py parameters
 Windows: JethroQueryStats.py parameters
 
 It accepts the following command line parameters:
 
--r -j -p file pattern list of files|directories
+`-r -j -p file pattern list of files|directories`
 
-Where:
-list of files|directories - The list of log files or directories to parse.
+####Where
+*list of files|directories - The list of log files or directories to parse.
 
-file pattern - The file pattern to match in the input directories.
+*file pattern - The file pattern to match in the input directories.
 
--r - Remove comments from the queries.
+*-r - Remove comments from the queries.
 
--j - Jenerate the output files in a way that can be loaded to Jethro
+*-j - Jenerate the output files in a way that can be loaded to Jethro
 
 
 JethroQueryStats reads the input files, searches for executed queries and generates a report file named stats.csv. Each row in the file contains the follwoing information about an executed query:
 
-- Query ID - A unique identifier for the query. Queries that were exected more than once, will have the same ID.
-- File ID - A unique identifier for the file which the query was found in. It contains file path after removing the largest common prefix.
-- Duration - The time in seconds it took to execute the query.
-- Change - The duration difference between the last time the same query was executed and the current.
-- Execution time - The date and time of the query execution.
-- SQL - The executed SQL.
+* Query ID - A unique identifier for the query. Queries that were exected more than once, will have the same ID.
+* File ID - A unique identifier for the file which the query was found in. It contains file path after removing the largest common prefix.
+* Duration - The time in seconds it took to execute the query.
+* Change - The duration difference between the last time the same query was executed and the current.
+* Execution time - The date and time of the query execution.
+* SQL - The executed SQL.
 
 The first row in the file contains a header with the column names.
 The file is sorted by query ID where every group of queries with the same query ID are separated by an empty line.
 
-If the -j parameter is specified, the output consists of 2 files: stats.csv and queries.csv.
+If the `-j` parameter is specified, the output consists of 2 files: stats.csv and queries.csv.
 stats.csv is the same as above but without the SQL column, the header and the separating empty lines.
 queries.csv contains a line for each unique query. Each line contains the query ID and the SQL.
 
 These 2 files can be loaded into Jethro using the following create table commands and description files:
 
+```
 create table stats
 (
 	query_id int,
@@ -78,7 +79,7 @@ overwrite
 	query_id,
 	sql
 )
-
+```
 
 #ExtractQueries
 
