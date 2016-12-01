@@ -1,18 +1,20 @@
 #!/usr/bin/python
 
-
 import sys, csv, re, getopt, collections, calendar, time
 
 class Column:
     
     max_int = int('0x7FFFFFFF' , 16)
     min_int = -max_int-1
-    datetime_regex = re.compile('^((\d{4}([-/.])(0?[1-9]|1[0-2])[-/\.](0?[1-9]|[12][0-9]|3[01]))|((0?[1-9]|1[0-2])([-/\.])(0?[1-9]|[12][0-9]|3[01])[-/\.]\d{4})|(\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01]))|((0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\d{4}))(([\sT])(((0?[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]))(:([0-9]|[0-5][0-9]))?)([:\.][0-9]{1,9}Z?)?)?$')
+    datetime_regex = re.compile('^((\d{4}([-/.])(0?[1-9]|1[0-2])[-/\.](0?[1-9]|[12][0-9]|3[01]))|((0?[1-9]|1[0-2])([-/\.])(0?[1-9]|[12][0-9]|3[01])[-/\.]\d{4})|(\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01]))|((0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\d{4}))(([\sT])((0?[0-9]|1[0-9]|2[0-3])(:)([0-9]|[0-5][0-9]))(:([0-9]|[0-5][0-9]))?([:\.][0-9]{1,9}Z?)?)?$')
     date_formats = [['yyyy-M-d', '%Y-%m-%d', 1], ['M-d-yyyy', '%m-%d-%Y', 5], ['yyyyMMdd', '%Y%m%d', 9], ['MMddyyyy', '%m%d%Y', 12]] 
-    time_formats = [['H:m:s', '%H:%M:%S', 17], ['H:m', '%H:%M', 18]]
+    time_formats = [['H:m', '%H:%M'], ['H:m:s', '%H:%M:%S']]
     separator_idx = 16
-    date_sparators = [2, 7]
+    time_index = 17
+    sec_index = 22
     milli_idx = 23
+    date_sparators = [2, 7]
+    time_separator = 19
     string_list_max_size = 1001
     
     category_regex = [['Url', 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'],
@@ -62,6 +64,9 @@ class Column:
         except ValueError:
             return False
     
+    def hasTimePart(self, match):
+        return match.groups()[Column.separator_idx - 1] != None
+    
     def getTimestampFormat(self, match, jethroFormat):
         dateFormat = ''
         dateSeparator = ''
@@ -75,21 +80,27 @@ class Column:
                 dateFormat = df[formatPos]
                 break
         
-        for tf in self.time_formats:
-            if match.groups()[tf[2]] != None:
-                timeFormat = tf[formatPos]
-                break
-        
-        milli = match.groups()[self.milli_idx]
-        if milli != None:
-            if jethroFormat == True:
-                timeFormat += milli[0] + 'S'*(len(milli)-1)
-            else:
-                timeFormat += milli[0] + '%f'
-             
-        if match.groups()[self.separator_idx] != None:
-            separator = match.groups()[self.separator_idx]
-        
+        if self.hasTimePart(match):
+            time_separator = match.groups()[Column.time_separator]
+            time_format_idx1 = 0
+            time_format_idx2 = 0
+            if jethroFormat == False:
+                time_format_idx2 = 1
+            if match.groups()[Column.sec_index] != None:
+                time_format_idx1 = 1
+            
+            
+            timeFormat = Column.time_formats[time_format_idx1][time_format_idx2].replace(':', time_separator)
+            milli = match.groups()[self.milli_idx]
+            if milli != None:
+                if jethroFormat == True:
+                    timeFormat += milli[0] + 'S'*(len(milli)-1)
+                else:
+                    timeFormat += milli[0] + '%f'
+                 
+            if match.groups()[self.separator_idx] != None:
+                separator = match.groups()[self.separator_idx]
+            
         
         for ds in self.date_sparators:
             if match.groups()[ds] != None:
@@ -122,10 +133,13 @@ class Column:
             return False
     
     def isPrimaryKey(self):
-        if (len(self.getValueList()) == self.rowcount or  len(self.getValueList()) >= Column.string_list_max_size) and len(self.getExceptionList()) == 0:
+        if len(self.getValueList()) == self.rowcount and len(self.getExceptionList()) == 0:
             return True
         else:
             return False
+        
+    def isHighCardinality(self):
+        return len(self.getValueList()) >= Column.string_list_max_size
                                                                                                              
     def addDistinct(self, value_list, value):
         if  len(value_list) < Column.string_list_max_size and value not in value_list:
@@ -159,8 +173,7 @@ class Column:
                 if match != None:
                     break
             
-            for tf in self.time_formats:
-                if match.groups()[tf[2]] != None:
+            if self.hasTimePart(match):
                     return 'Datetime'
             return 'Date'
         elif self.type == 'STRING':
@@ -218,6 +231,11 @@ class Column:
                 self.category += ' - Primary Key'
             else:
                 self.category = 'Primary Key'
+        elif self.isHighCardinality() == True:
+            if self.category != '':
+                self.category += ' - High Cardinality'
+            else:
+                self.category = 'High Cardinality'
                   
     def getExceptionList(self):
         if self.type == 'STRING':
