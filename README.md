@@ -160,7 +160,7 @@ If pip is not installed:
 The input data is expected to be delimited rows of data. 
 The data is read and analyzed and then a report such as the following is generated:
 Number | Name | Rows | Type | Category | Percent | Exceptions | Distinct | Samples
--------|------|------|------|----------|---------|------------|----------|---------
+------ | ---- | ---- | ---- | -------- | ------- | ---------- | -------- | -------
 1 | name | 6 | STRING | Primary Key | 100 | | 6 | "aaa" "bbb" "ccc" "ddd" "eee" "fff"
 2 | age | 6 | BIGINT | | 66 | "NULL" | 4 | "1234568674737747372" "-12" "341"
 3 | birth date | 6 | TIMESTAMP | Date | 100 | | 5 | "2016-01-07" "2016-12-23" "2016-07-1" "20160714" "2016-07-14"
