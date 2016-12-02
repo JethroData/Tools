@@ -27,7 +27,8 @@ class Column:
                       ['Uuid', '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'],
                       ['Phone Number', '(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})'],
                       ['Email', '^[\w\.\+\-]+\@([\w]+\.)+[a-z]{2,3}$'],
-                      ['IP Address' , '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$']
+                      ['IP Address' , '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'],
+                      ['SQL', '(?i)^(SELECT|UPDATE|INSERT)[\s\S]+?\;?\s*?$']
                     ]
     
     null_strings = ['', 'NULL', '\N']
@@ -126,7 +127,17 @@ class Column:
     def isValidTimestamp(self, value, match):
         tsFormat = self.getTimestampFormat(match, False)
         if tsFormat != '':
-            ts = calendar.timegm(time.strptime(value, tsFormat))
+            errMessage = 'unconverted data remains: '
+            try:
+                tm = time.strptime(value, tsFormat)
+            except ValueError as e:
+                err = str(e)
+                if err.startswith(errMessage):
+                    tm = time.strptime(value[:-len(err[len(errMessage):])], tsFormat)
+                else:
+                    return False
+            
+            ts = calendar.timegm(tm)
             if ts > 0 and ts < sys.maxint:
                 return True
         return False
@@ -279,7 +290,7 @@ def columnsToTable(columns):
             row.append('> 1000')
         else:
             row.append(str(column.total_list_size))
-        row.append(' '.join('"' + e + '"' for e in column.getValueList()[:10]))
+        row.append(' '.join('"' + e[:50].replace('"', '\\"') + '"' for e in column.getValueList()[:10]))
         table.append(row)  
         i += 1
     return table
