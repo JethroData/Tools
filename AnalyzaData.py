@@ -32,7 +32,7 @@ class Column:
                     ]
     
     null_strings = ['', 'NULL', '\N']
-    boolean_strings = ['Y', 'N', 'YES', 'NO', 'TRUE', 'FALSE', '1', '0']
+    boolean_strings = ['Y', 'N', 'YES', 'NO', 'T', 'F', 'TRUE', 'FALSE', '1', '0']
     
     def __init__(self, name):
         self.name = name
