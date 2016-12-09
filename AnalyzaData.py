@@ -32,6 +32,7 @@ class Column:
                     ]
     
     null_strings = ['', 'NULL', '\N']
+    boolean_strings = ['Y', 'N', 'YES', 'NO', 'TRUE', 'FALSE', '1', '0']
     
     def __init__(self, name):
         self.name = name
@@ -164,9 +165,9 @@ class Column:
                 
     def addValue(self, value):
         self.rowcount += 1
-        if self.isTimestamp(value):
+        if self.isTimestamp(value.rstrip()):
             self.timestampcount += 1
-            self.addDistinct(self.timestamp_list, value)
+            self.addDistinct(self.timestamp_list, value.rstrip())
         elif self.isInt(value):
             self.intcount += 1
             i = int(float(value))
@@ -174,17 +175,32 @@ class Column:
                 self.min_int_value = i
             if i > self.max_int_value:
                 self.max_int_value = i
-            self.addDistinct(self.int_list, value)
+            self.addDistinct(self.int_list, value.strip())
         elif self.isFloat(value):
             self.floatcount += 1
             if len(value) > self.max_float_size:
                 self.max_float_size = len(value)
-            self.addDistinct(self.int_list, value)
+            self.addDistinct(self.int_list, value.strip())
         else:
             self.addDistinct(self.string_list, value)
     
+    def excludeList(self, value_list, exclude_list, casesensitive=True):
+        if casesensitive == True:
+            return [e for e in value_list if e not in exclude_list]
+        else:
+            exclude_list = [element.upper() for element in exclude_list]
+            return [e for e in value_list if e.upper() not in exclude_list]
+            
+    def isBoolean(self):
+        if self.type != 'TIMESTAMP':
+            if len(self.excludeList(self.getValueList(), Column.boolean_strings, False)) == 0:
+                return True
+        return False
+        
     def getCategory(self):
-        if self.type == 'TIMESTAMP':
+        if self.isBoolean():
+            return 'Boolean'
+        elif self.type == 'TIMESTAMP':
             for v in self.timestamp_list:
                 match = self.datetime_regex.match(v)
                 if match != None:
@@ -235,14 +251,14 @@ class Column:
             if perc > self.perc:
                 self.perc = perc
                 self.type = 'TIMESTAMP'
-                self.category = self.getCategory()
                 
         if self.perc == 0.0 or len(self.string_list) > 5:
             self.type = 'STRING'
             self.perc = 1.0
-            self.category = self.getCategory()
+            
         
         self.total_list_size = len(self.int_list) + len(self.timestamp_list) + len(self.string_list)
+        self.category = self.getCategory()
         if self.isPrimaryKey() == True:
             if self.category != '':
                 self.category += ' - Primary Key'
@@ -254,9 +270,10 @@ class Column:
             else:
                 self.category = 'High Cardinality'
                   
+    
     def getExceptionList(self):
         if self.type == 'STRING':
-            return []
+            return [e for e in self.string_list if e in Column.null_strings]
         elif self.type == 'TIMESTAMP':
             return self.int_list + self.string_list
         else:
@@ -264,7 +281,7 @@ class Column:
     
     def getValueList(self):
         if self.type == 'STRING':
-            return self.string_list + self.int_list + self.timestamp_list
+            return self.excludeList(self.string_list, Column.null_strings, False) + self.int_list + self.timestamp_list
         elif self.type == 'TIMESTAMP':
             return self.timestamp_list
         else:
@@ -282,10 +299,7 @@ def columnsToTable(columns):
         if perc == '0':
             perc = '< 1'
         
-        if column.type == 'STRING':
-            row = [i, column.name, column.rowcount, column.type, column.category, perc, '']
-        else:
-            row = [i, column.name, column.rowcount, column.type, column.category, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
+        row = [i, column.name, column.rowcount, column.type, column.category, perc, ' '.join('"' + e + '"' for e in column.getExceptionList()[:5])] 
         if  column.total_list_size >= Column.string_list_max_size:
             row.append('> 1000')
         else:
