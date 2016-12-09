@@ -372,8 +372,9 @@ def writeFooters(ddlfile, descfile):
 def getNullString(columns):
     nulls = collections.Counter()
     for c in columns:
-        if c.type != 'STRING' and len(c.string_list) == 1:
-            nulls.update(c.string_list)
+        ex = c.getExceptionList()
+        if len(ex) == 1:
+            nulls.update(ex)
             
     null = nulls.most_common(1)
     if len(null) > 0:
@@ -409,7 +410,7 @@ def generateSchema(table_name, delimiter, with_header):
         if c.type == 'TIMESTAMP':
             descfile.write(" format='" + c.getColumnTimstampFormat() + "'")
         
-        if ctype != 'STRING' and len(exceptionList) == 1 and exceptionList[0] != nullStr:
+        if len(exceptionList) == 1 and exceptionList[0] != nullStr:
             descfile.write(" null defined as '" + exceptionList[0] + "'")
             
         i += 1
