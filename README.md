@@ -128,7 +128,7 @@ AnalyzeData reads a sample of the input data that is going to be loaded into Jet
 
 #Prerequisites:
 Python 2.6 or higher installed.
-Python tabulate package (not required if report is issued in csv mode).
+Python tabulate package (not required if report is issued in csv mode. If not installed, report will automatically be set to csv mode).
 To install tabulate:
 Linux: 
 	`TABULATE_INSTALL=lib-only pip install tabulate`
@@ -151,7 +151,7 @@ If pip is not installed:
 ####Where
 * -i: Number of rows to read from the input.
 * -d: The input data delimiter.
-* -q: The input data quote character.
+* -q: The input data quote character. This allows a delimiter character inside quotes as part of the data.
 * -n: Indicates whether the first row contains the column names.
 * -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table. Installing tabulate is not required in this mode.
 * -g: Generate a create table script and a description file using the given table name.
@@ -170,10 +170,10 @@ Number | Name | Rows | Type | Category | Percent | Exceptions | Distinct | Sampl
 
 
 * Number: The column serial number.
-* Name: The column name if the data contains headers. Otherwise is is c1..cN.
+* Name: The column name, if the data contains headers. Otherwise it is c1..cN.
 * Rows: The number of rows for the column.
-* Type: The suggested type to use based on the data. A non string type is suggested in case more than 50% of the values are of that type and there are 5 or less distinct exception values.
-* Category: For certain string values, a category can be detected based on regular expressions. It also specifies "Primary Key" when a column has unique values and "High Cardinality" if it has many unique values.
+* Type: The suggested type to use based on the data. A non string type is suggested in case not string values are found and there are no more than 5 distinct exception values.
+* Category: For certain values, a category can be detected based on regular expressions. It also specifies "Primary Key" when a column has unique values and "High Cardinality" if it has many unique values.
 * Percent: The percentage of the values of the suggested type out of all values.
 * Exceptions: A list of up to 5 exception values. Exception values are values that do not match the suggested type.
 * Distinct: The number of distinct values.
@@ -214,7 +214,21 @@ phone
 * If the input contains a header row, then a SKIP 1 option is added.
 * The timestamp format is generated based on the first timestamp value in the column.
 
+###Examples
+* Analyze data in a csv file "data.csv"
+```
+python AnalyzeData.py -d '|' data.csv
+```
 
+* Analyze data in a csv file "data.csv" that contains headers, generating scripts for a table "customers" and store the output into a file in csv mode
+```
+python AnalyzeData.py -d '\001' -c -g customers data.csv > output.csv
+```
+
+* Analyze data stored in a hive table "sales.customers", limiting the input to 10000 rows 
+```
+hive -e "select * from sales.customers" | python AnalyzeData.py -i 10000 -d '\t'
+```
 
 
 
