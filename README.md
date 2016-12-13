@@ -172,7 +172,7 @@ Number | Name | Rows | Type | Category | Percent | Exceptions | Distinct | Sampl
 * Number: The column serial number.
 * Name: The column name, if the data contains headers. Otherwise it is c1..cN.
 * Rows: The number of rows for the column.
-* Type: The suggested type to use based on the data. A non string type is suggested in case not string values are found and there are no more than 5 distinct exception values.
+* Type: The suggested type to use based on the data. A non string type is suggested in case non string values are found and there are no more than 5 distinct exception values.
 * Category: For certain values, a category can be detected based on regular expressions. It also specifies "Primary Key" when a column has unique values and "High Cardinality" if it has many unique values.
 * Percent: The percentage of the values of the suggested type out of all values.
 * Exceptions: A list of up to 5 exception values. Exception values are values that do not match the suggested type.
