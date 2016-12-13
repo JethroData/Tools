@@ -220,7 +220,7 @@ phone
 python AnalyzeData.py -d '|' data.csv
 ```
 
-* Analyze data in a csv file "data.csv" that contains headers, generating scripts for a table "customers" and store the output into a file in csv mode
+* Analyze data in a csv file "data.csv" that contains headers, generate scripts for a table "customers" and store the output into a file in csv mode
 ```
 python AnalyzeData.py -d '\001' -n -c -g customers data.csv > output.csv
 ```
