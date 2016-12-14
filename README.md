@@ -155,7 +155,7 @@ If pip is not installed:
 * -n: If specified, treats the first row as headers row which contains the column names.
 * -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table. Installing tabulate is not required in this mode.
 * -g: Generate a create table script and a description file using the given table name.
-* <input file>: The input file to read. If not specified, read from standard input.
+* input file: The input file to read. If not specified, read from standard input.
 	
 The input data is expected to be delimited rows of data. 
 The data is read and analyzed and then a report such as the following is generated:
