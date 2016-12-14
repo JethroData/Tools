@@ -149,10 +149,10 @@ If pip is not installed:
 `AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-q <quote char>] [-n] [-c] [-g <table name>] [<input file>]`
 
 ####Where
-* -i: Number of rows to read from the input.
+* -i: Number of rows to read from the input. Default=unlimited.
 * -d: The input data delimiter.
-* -q: The input data quote character. This allows a delimiter character inside quotes as part of the data.
-* -n: Indicates whether the first row contains the column names.
+* -q: The input data quote character. This allows a delimiter character inside quotes as part of the data. Default=" (double quotes).
+* -n: If specified, treats the first row as headers row which contains the column names.
 * -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table. Installing tabulate is not required in this mode.
 * -g: Generate a create table script and a description file using the given table name.
 * <input file>: The input file to read. If not specified, read from standard input.

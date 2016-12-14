@@ -428,10 +428,10 @@ def generateSchema(table_name, delimiter, with_header):
     
 def printUsage():
     sys.stderr.write('AnalyzeData.py [-i <rows to read>] [-d <delimiter>] [-q <quote char>] [-n] [-c] [-g <table name>] [<input file>]\n')
-    sys.stderr.write('    -i: Number of rows to read from the input.\n')
-    sys.stderr.write('    -d: The input data delimiter.\n')
-    sys.stderr.write('    -q: The input data quote character.\n')
-    sys.stderr.write('    -n: Indicates whether the first row contains the column names.\n')
+    sys.stderr.write('    -i: Number of rows to read from the input. Default=unlimited\n')
+    sys.stderr.write('    -d: The input data delimiter. Default=','\n')
+    sys.stderr.write('    -q: The input data quote character. ,Default=" (double quotes)\n')
+    sys.stderr.write('    -n: If specified, treats the first row as headers row which contains the column names.\n')
     sys.stderr.write('    -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table.\n')
     sys.stderr.write('    -g: Generate a create table script and a description file using the given table name.\n')
     sys.stderr.write('    <input file>: The input file to read. If not specified, read from standard input.\n')
