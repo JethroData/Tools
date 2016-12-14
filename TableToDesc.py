@@ -31,7 +31,7 @@ def getTableColumns(table):
 
     for row in rows[4:]:
         cols = map(str.strip, row.split('|'))
-        if cols[0] != '':
+        if cols[0] != '' and cols[0] != 'Partition by':
             names.append(cols)
             
     return names

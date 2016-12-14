@@ -1,13 +1,7 @@
-'''
-Created on Jul 31, 2015
-
-@author: yuvals
-'''
 import sys
 from os import listdir
 from os.path import join, isfile, dirname
 import re, fnmatch
-import ntpath
 
 from itertools import takewhile
 from getopt import getopt, GetoptError
@@ -71,16 +65,20 @@ def readQueries(inputfile, prefix, ignoreComments):
         rows.append((qid, fileId, duration, time))
         
     print "Found " + str(len(matches)) + " matches in " + fileId
-
-def calculateChange():
-    global rows
+  
+def writeRows(forJethro):
+    global queries, rows
+    rows = sorted(rows, key=itemgetter(2), reverse=True )
+    rows = sorted(rows, key=itemgetter(0))
     
-    sorted_rows = sorted(rows, key=itemgetter(0))
+    outfile = open("stats.csv", 'w')
+    if forJethro == False:
+        outfile.write("Query ID" + delimiter + "File ID" + delimiter + "Duration" + delimiter + "Change" + delimiter + "Execution Time" + delimiter + "SQL\n")
     
-    new_rows = []
     last_id = 1
     last_duration = 0
-    for row in sorted_rows:
+    
+    for row in rows:
         qid = row[0]
         duration = float(row[2])
         if qid > last_id:
@@ -91,33 +89,15 @@ def calculateChange():
             '''change = str(round(((duration / last_duration) - 1) * 100, 2))'''
             change = str(duration - last_duration)
         last_duration = duration
-        new_rows.append(row + (change,))
-        
-    rows = sorted(new_rows, key=itemgetter(3), reverse=True)
-    rows = sorted(rows, key=itemgetter(0))
-   
-def writeRows(forJethro):
-    global queries, rows
-    rows = sorted(rows, key=itemgetter(3), reverse=True)
-    sorted_rows = sorted(rows, key=itemgetter(0))
-    '''sorted_rows = sorted(rows, key=lambda row: row[0], row[2])'''
-    last_id = 1
-
-    outfile = open("stats.csv", 'w')
-    if forJethro == False:
-        outfile.write("Query ID" + delimiter + "File ID" + delimiter + "Duration" + delimiter + "Change" + delimiter + "Execution Time" + delimiter + "SQL\n")
-    for row in sorted_rows:
-        qid = row[0]
-        duration = float(row[2])
         if qid > last_id:
             if forJethro == False:
                 outfile.write(delimiter + delimiter + delimiter + delimiter + delimiter + "\n")
             last_id = qid
         query = queries[qid - 1]
         if forJethro == False:
-            outfile.write(str(qid) + delimiter + row[1] + delimiter  + str(duration) + delimiter + row[4] + delimiter + row[3] +  delimiter + query.replace('\n', ' ')  + "\n")
+            outfile.write(str(qid) + delimiter + row[1] + delimiter  + str(duration) + delimiter + change + delimiter + row[3] +  delimiter + query.replace('\n', ' ')  + "\n")
         else:
-            outfile.write(str(qid) + delimiter + row[1] + delimiter  + str(duration) + delimiter + row[4] + delimiter + row[3] +  "\n")
+            outfile.write(str(qid) + delimiter + row[1] + delimiter  + str(duration) + delimiter + change + delimiter + row[3] +  "\n")
             
     outfile.close()
     
@@ -163,7 +143,6 @@ def main(argv):
     
     for f in files:
         readQueries(f, prefix, ignoreComments)
-    calculateChange()
     writeRows(forJethro)
     if forJethro == True:
         writeQueries()
