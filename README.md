@@ -180,7 +180,7 @@ Number | Name | Rows | Type | Category | Percent | Exceptions | Distinct | Sampl
 * Samples: Sample values of the suggested type.
 
 In addition, if the -g parameter is specified with a table name, then a create table script and a description file is generated based on the data.
-For the above data, the following scripts are generated when given the table name "test":
+For the above data, the following scripts are generated as test.ddl and test.desc when given the table name "test":
 
 ```
 create table test
