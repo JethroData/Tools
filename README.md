@@ -150,7 +150,7 @@ If pip is not installed:
 
 ####Where
 * -i: Number of rows to read from the input. Default=unlimited.
-* -d: The input data delimiter.
+* -d: The input data delimiter. Default="," (comma).
 * -q: The input data quote character. This allows a delimiter character inside quotes as part of the data. Default=" (double quotes).
 * -n: If specified, treats the first row as headers row which contains the column names.
 * -c: CSV formatted output. Write the output report as a tab delimited file instead of a formatted table. Installing tabulate is not required in this mode.
